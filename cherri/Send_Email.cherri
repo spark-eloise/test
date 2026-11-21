@@ -1,0 +1,77 @@
+#define name Send Email
+#define color purple
+#define glyph envelope
+#define from sharesheet, search
+#define noinput getclipboard
+
+#include 'actions/sharing'
+
+// Emails shared content to Spark: subject = Where + What, body = content + When/End.
+
+menu "Email this to Spark?" {
+    item "Yes":
+        @Where = list("Notion", "Github", "Task", "Agenda")
+        @Chosen: text
+        @Chosen = chooseFromList(@Where, "Where?")
+        @What = ""
+
+        if @Chosen == "Notion" {
+            menu "What?" {
+                item "📖 Read":
+                    @What = "📖 Read"
+                item "🔖 Read later":
+                    @What = "🔖 Read later"
+                item "📋 Briefing":
+                    @What = "📋 Briefing"
+                item "✨ Make":
+                    @What = "✨ Make"
+            }
+        }
+
+        if @Chosen == "Github" {
+            menu "What?" {
+                item "🔔 Subscribe":
+                    @What = "🔔 Subscribe"
+                item "⏳ Watch until":
+                    @What = "⏳ Watch until"
+                item "🗂️ File it":
+                    @What = "🗂️ File it"
+            }
+        }
+
+        if @Chosen == "Task" {
+            menu "What?" {
+                item "✅ Task":
+                    @What = "✅ Task"
+                item "📌 Track":
+                    @What = "📌 Track"
+            }
+        }
+
+        if @Chosen == "Agenda" {
+            menu "What?" {
+                item "📅 Add event":
+                    @What = "📅 Add event"
+                item "🔁 Add recurring":
+                    @What = "🔁 Add recurring"
+                item "🚩 Add deadline":
+                    @What = "🚩 Add deadline"
+            }
+        }
+
+        @When = prompt("When?", "Date and Time")
+        @End = prompt("End?", "Date and Time")
+
+        @Subject = "{@Chosen} · {@What}"
+        @Body = "Hey Spark — for you 🐾
+
+{ShortcutInput}
+
+When: {@When}
+End: {@End}"
+
+        @To = "RECIPIENT_EMAIL"
+        sendEmail(@To, "SENDER_EMAIL", @Subject, @Body, false)
+    item "No":
+        stop()
+}
