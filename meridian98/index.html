@@ -1,0 +1,862 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Meridian 98">
+<meta name="theme-color" content="#008080">
+<meta name="color-scheme" content="light">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);background:#000}
+body{margin:0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<title>Meridian 98</title>
+<style>
+/* Layout: one fake desktop OS filling the screen. Windows float on desktop widths and
+   maximise on phones. A single deliberate 1999 look, so no dark theme. */
+:root{
+  --desk:#008080; --face:#c0c0c0; --lite:#dfdfdf; --shade:#808080; --ink:#000000; --white:#ffffff;
+  --navy:#000080; --navy2:#1084d0; --paper:#ffffff; --link:#0000ee; --vlink:#551a8b;
+  --warn:#a00000; --good:#006000; --yellow:#ffffe1;
+  --font:"MS Sans Serif","Microsoft Sans Serif",Tahoma,Verdana,"Helvetica Neue",Arial,sans-serif;
+  --mono:"Courier New",Menlo,Consolas,monospace;
+  --fs:12px; --tb:32px; --tbh:20px; --ctl:23px;
+}
+@media (max-width:719px){:root{--fs:14px;--tb:48px;--tbh:32px;--ctl:36px}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--desk);color:var(--ink);font:var(--fs)/1.3 var(--font);overflow:hidden;overscroll-behavior:none;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button,input,textarea{font:inherit;color:inherit}
+@media (max-width:719px){input,textarea{font-size:16px!important}}
+.sel,.sel *{-webkit-user-select:text;user-select:text}
+#app{position:relative;height:100%;overflow:hidden}
+.layer{position:absolute;inset:0}
+
+/* bevels */
+.raise{background:var(--face);box-shadow:inset -1px -1px 0 #000,inset 1px 1px 0 #fff,inset -2px -2px 0 var(--shade),inset 2px 2px 0 var(--lite)}
+.sunk{background:var(--paper);box-shadow:inset 1px 1px 0 var(--shade),inset -1px -1px 0 #fff,inset 2px 2px 0 #000,inset -2px -2px 0 var(--lite)}
+.btn{border:0;background:var(--face);min-width:75px;min-height:var(--ctl);padding:3px 12px;cursor:pointer;
+  box-shadow:inset -1px -1px 0 #000,inset 1px 1px 0 #fff,inset -2px -2px 0 var(--shade),inset 2px 2px 0 var(--lite)}
+.btn:active,.btn.on{box-shadow:inset 1px 1px 0 #000,inset -1px -1px 0 #fff,inset 2px 2px 0 var(--shade);padding:4px 11px 2px 13px}
+.btn:focus-visible,.task:focus-visible,.ico:focus-visible,.mi:focus-visible{outline:1px dotted #000;outline-offset:-4px}
+.btn.sm{min-width:0;padding:3px 8px}
+svg{display:block}
+
+/* power / boot / login */
+#power{background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;color:#9a9a9a;font-family:var(--mono);text-align:center;padding:24px}
+#power h1{margin:0;font-size:22px;letter-spacing:.12em;color:#c8c8c8;font-weight:normal}
+#power p{margin:0;max-width:34ch;line-height:1.5;font-size:13px}
+#power .btn{font-family:var(--font);font-size:15px;display:flex;align-items:center;gap:10px;padding:8px 22px;min-height:44px;color:#000}
+.led{width:10px;height:10px;border-radius:50%;background:#2c2;box-shadow:0 0 8px #3f3}
+#power small{font-size:11px;color:#6a6a6a}
+#bios{background:#000;color:#c0c0c0;font:14px/1.4 var(--mono);padding:16px;white-space:pre-wrap}
+#splash{background:linear-gradient(#4f86cf,#9cc2ec 62%,#e6f0fb);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px}
+#splash .logo{font:italic bold 44px/1 "Times New Roman",Georgia,serif;color:#fff;text-shadow:3px 3px 0 #1c3f7a;letter-spacing:.02em}
+#splash .logo b{color:#ffd23c}
+#splash .ver{color:#1c3f7a;font-size:13px;margin-top:-14px}
+.bar{width:min(260px,70vw);height:16px;padding:2px;overflow:hidden}
+.bar i{display:block;height:100%;width:40%;background:repeating-linear-gradient(90deg,var(--navy) 0 8px,transparent 8px 11px);animation:slide 1.3s linear infinite}
+@keyframes slide{from{transform:translateX(-110%)}to{transform:translateX(260%)}}
+#login{background:var(--desk);display:flex;align-items:center;justify-content:center;padding:12px}
+.dlg{width:min(380px,100%);padding:3px}
+.tbar{display:flex;align-items:center;gap:4px;height:var(--tbh);padding:2px 3px;background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;font-weight:bold;touch-action:none;flex:none}
+.inactive>.tbar{background:linear-gradient(90deg,#808080,#b4b4b4)}
+.tt{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ti{display:flex}.ti svg{width:16px;height:16px}
+.tb{width:calc(var(--tbh) - 4px);min-width:0;height:calc(var(--tbh) - 6px);padding:0;border:0;line-height:1;font-weight:bold;font-size:12px;color:#000;display:flex;align-items:center;justify-content:center;
+  background:var(--face);box-shadow:inset -1px -1px 0 #000,inset 1px 1px 0 #fff,inset -2px -2px 0 var(--shade),inset 2px 2px 0 var(--lite)}
+.tb:active{box-shadow:inset 1px 1px 0 #000,inset -1px -1px 0 #fff,inset 2px 2px 0 var(--shade)}
+.dbody{display:flex;gap:14px;padding:14px 12px 8px;align-items:flex-start}
+.dicon{flex:none;width:32px;height:32px;border-radius:50%;color:#fff;font:bold 22px/32px var(--font);text-align:center}
+.dicon.i{background:#0000c0;font-family:"Times New Roman",serif;font-style:italic}.dicon.w{background:#e0b000;color:#000;border-radius:4px}.dicon.q{background:#0000c0}.dicon.x{background:#c00000}
+.dtext{flex:1;min-width:0;line-height:1.45}
+.dbtns{display:flex;gap:8px;justify-content:center;padding:8px 8px 10px;flex-wrap:wrap}
+.field{display:grid;grid-template-columns:84px 1fr;gap:6px 8px;align-items:center;padding:4px 12px 0}
+.field input{height:var(--ctl);padding:2px 5px;border:0;background:#fff;min-width:0;-webkit-user-select:text;user-select:text}
+.hint{padding:8px 14px 4px;font-size:calc(var(--fs) - 1px);color:#303030;line-height:1.4}
+.err{color:var(--warn);padding:2px 14px 0;min-height:1.4em}
+.shake{animation:shake .35s}
+@keyframes shake{20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+#modal{z-index:20000;background:rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;padding:12px}
+
+/* desktop */
+#os{background:var(--desk)}
+#icons{position:absolute;left:0;right:0;top:0;bottom:var(--tb);display:grid;grid-auto-flow:column;grid-template-rows:repeat(auto-fill,minmax(88px,max-content));grid-auto-columns:88px;align-content:start;gap:2px;padding:8px}
+.ico{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:4px;color:#fff;text-align:center;padding:4px 2px;width:84px;cursor:pointer}
+.ico svg{width:36px;height:36px}
+.ico span{padding:0 2px;text-shadow:1px 1px 0 #000;line-height:1.2}
+.ico.on span{background:var(--navy);outline:1px dotted #fff;text-shadow:none}
+@media (max-width:719px){.ico svg{width:44px;height:44px}.ico{width:92px}#icons{grid-auto-columns:96px}}
+#wins{position:absolute;left:0;right:0;top:0;bottom:var(--tb);pointer-events:none}
+.win{position:absolute;display:flex;flex-direction:column;padding:3px;pointer-events:auto;min-width:200px;min-height:120px}
+.win[hidden]{display:none}
+.win.max,.max-all .win{left:0!important;top:0!important;width:100%!important;height:100%!important}
+@media (max-width:719px){.win{left:0!important;top:0!important;width:100%!important;height:100%!important;padding:2px}}
+.wbody{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;margin-top:3px;overflow:hidden}
+.grip{position:absolute;right:0;bottom:0;width:16px;height:16px;cursor:nwse-resize;touch-action:none;
+  background:linear-gradient(135deg,transparent 50%,var(--shade) 50% 58%,transparent 58% 70%,var(--shade) 70% 78%,transparent 78%)}
+@media (max-width:719px){.grip{display:none}}
+
+/* taskbar */
+#tb{position:absolute;left:0;right:0;bottom:0;height:var(--tb);display:flex;align-items:center;gap:4px;padding:3px 3px;z-index:9000;box-shadow:inset 0 1px 0 var(--lite),inset 0 2px 0 #fff}
+#tb{background:var(--face)}
+.startbtn{height:100%;display:flex;align-items:center;gap:6px;padding:0 10px;font-weight:bold;min-width:0}
+.startbtn svg{width:20px;height:20px}
+.sep{width:2px;height:70%;background:var(--shade);box-shadow:1px 0 0 #fff;margin:0 2px}
+#tasks{flex:1;min-width:0;display:flex;gap:3px;height:100%}
+.task{flex:0 1 160px;min-width:34px;height:100%;display:flex;align-items:center;gap:5px;padding:0 6px;border:0;text-align:left;overflow:hidden;white-space:nowrap;
+  background:var(--face);box-shadow:inset -1px -1px 0 #000,inset 1px 1px 0 #fff,inset -2px -2px 0 var(--shade),inset 2px 2px 0 var(--lite)}
+.task svg{width:16px;height:16px;flex:none}.task span{overflow:hidden;text-overflow:ellipsis}
+.task.on{font-weight:bold;background:repeating-conic-gradient(#fff 0 25%,var(--face) 0 50%) 0 0/2px 2px;box-shadow:inset 1px 1px 0 #000,inset -1px -1px 0 #fff,inset 2px 2px 0 var(--shade)}
+@media (max-width:719px){.task span{display:none}.task{flex:0 0 44px;justify-content:center}.task svg{width:24px;height:24px}}
+#tray{height:100%;display:flex;align-items:center;gap:8px;padding:0 8px;background:var(--face);box-shadow:inset 1px 1px 0 var(--shade),inset -1px -1px 0 #fff}
+#tray button{border:0;background:none;padding:0;display:flex;cursor:pointer}
+#tray svg{width:18px;height:18px}
+#clock{font-variant-numeric:tabular-nums;white-space:nowrap}
+#start{position:absolute;left:2px;bottom:var(--tb);z-index:9500;display:flex;padding:3px;min-width:220px}
+#start[hidden]{display:none}
+#start .side{width:28px;flex:none;background:linear-gradient(0deg,var(--navy),var(--navy2));color:#fff;font:bold 20px var(--font);writing-mode:vertical-rl;transform:rotate(180deg);padding:8px 3px;letter-spacing:.04em;white-space:nowrap}
+#start .side b{color:#ffd23c}
+#start .items{flex:1;min-width:0}
+.mi{display:flex;align-items:center;gap:10px;width:100%;padding:7px 14px 7px 8px;border:0;background:none;text-align:left;cursor:pointer}
+.mi svg{width:28px;height:28px;flex:none}
+.mi:hover,.mi:active{background:var(--navy);color:#fff}
+.mi.line{height:2px;padding:0;margin:3px 2px;background:var(--shade);box-shadow:0 1px 0 #fff;pointer-events:none}
+@media (max-width:719px){.mi{padding:10px 18px 10px 10px}}
+#balloon{position:absolute;right:6px;bottom:calc(var(--tb) + 6px);z-index:9400;max-width:min(280px,90vw);background:var(--yellow);border:1px solid #000;border-radius:6px;padding:9px 12px 10px;box-shadow:2px 2px 0 rgba(0,0,0,.35);line-height:1.4;cursor:pointer}
+#balloon b{display:block;margin-bottom:2px}
+#balloon::after{content:"";position:absolute;right:26px;bottom:-9px;border:8px solid transparent;border-top-color:#000;border-bottom:0}
+#balloon[hidden]{display:none}
+
+/* shared app chrome */
+.menubar{display:flex;gap:14px;padding:2px 8px;flex:none}
+.tool{display:flex;gap:6px;padding:4px;align-items:center;flex:none;flex-wrap:nowrap}
+.status{flex:none;display:flex;gap:4px;padding:2px;font-size:calc(var(--fs) - 1px)}
+.status>div{padding:2px 6px;box-shadow:inset 1px 1px 0 var(--shade),inset -1px -1px 0 #fff;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.status>div:first-child{flex:1}
+textarea.np{flex:1;width:100%;border:0;resize:none;padding:6px;font:calc(var(--fs) + 1px)/1.45 var(--mono);outline:0;white-space:pre-wrap;-webkit-user-select:text;user-select:text}
+
+/* explorer */
+.addr{flex:1;min-width:0;padding:3px 6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-family:var(--mono)}
+.flist{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));grid-auto-rows:max-content;gap:4px;padding:8px;align-content:start}
+.it{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 3px;text-align:center;cursor:pointer;color:inherit;word-break:break-word}
+.it svg{width:32px;height:32px}
+.it.on span,.it:active span{background:var(--navy);color:#fff}
+
+/* mail */
+.mail{flex:1;min-height:0;display:flex;flex-direction:column;gap:3px}
+.mlist{flex:none;max-height:42%;overflow:auto}
+.mrow{display:grid;grid-template-columns:18px minmax(90px,1.1fr) 2fr 62px;gap:6px;width:100%;padding:5px 6px;border:0;background:none;text-align:left;cursor:pointer;align-items:center;border-bottom:1px solid #e4e4e4}
+.mrow>*{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mrow.unread{font-weight:bold}.mrow.on{background:var(--navy);color:#fff}
+.mread{flex:1;min-height:0;overflow:auto;padding:10px 12px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.mhead{flex:none;padding:6px 10px;border-bottom:1px solid #999;line-height:1.5}
+.mhead b{display:inline-block;min-width:3.6em}
+.mailback{display:none}
+@media (max-width:719px){.mail.reading .mlist{display:none}.mail:not(.reading) .mreadwrap{display:none}.mail.reading .mailback{display:inline-block}.mlist{max-height:none;flex:1}
+  .mrow{grid-template-columns:18px 1fr 52px}.mrow .subj{grid-column:2/4;grid-row:2}}
+.mreadwrap{flex:1;min-height:0;display:flex;flex-direction:column}
+
+/* navigator */
+.navtool{display:flex;gap:4px;padding:4px;align-items:center;flex:none}
+.navtool input{flex:1;min-width:0;height:var(--ctl);padding:2px 6px;border:0;background:#fff;font-family:var(--mono)}
+.navtool .btn{min-width:0;padding:3px 9px}
+.throb{width:24px;height:24px;flex:none;background:conic-gradient(var(--navy) 0 25%,#fff 0 50%,var(--navy2) 0 75%,#fff 0);border-radius:50%;opacity:.25}
+.throb.go{opacity:1;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pgwrap{flex:1;min-height:0;overflow:auto;background:var(--paper)}
+.pg{font:15px/1.5 "Times New Roman",Times,serif;padding:14px 16px 28px;color:#000;min-height:100%;-webkit-user-select:text;user-select:text}
+.pg a{color:var(--link);text-decoration:underline;cursor:pointer}.pg a:visited{color:var(--vlink)}
+.pg h1{font-size:26px;margin:.2em 0 .3em}.pg h2{font-size:19px;margin:1em 0 .3em}
+.pg input[type=text],.pg input[type=search],.pg input[type=tel],.pg input[type=password]{font:inherit;padding:3px 6px;border:2px inset #999;background:#fff;color:#000;min-width:0}
+.pg button{font:14px var(--font);padding:3px 12px;cursor:pointer}
+.pg table{border-collapse:collapse;max-width:100%}
+.pg td,.pg th{border:1px solid #888;padding:4px 8px;text-align:left}
+.tablewrap{overflow-x:auto;max-width:100%}
+.rule{height:4px;border:0;background:linear-gradient(90deg,#f33,#fa0,#ee0,#3c3,#39f,#93f);margin:12px 0}
+.srch{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.srch input{flex:1;min-width:140px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.cols>div{border:1px solid #999;padding:8px 12px;background:#f6f6f6}
+.news{background:#ffffcc;border:1px solid #999;padding:8px 12px}
+/* Wren's homepage */
+.wren{background:#0a0a3c radial-gradient(circle,#fff 0 1px,transparent 1.5px) 0 0/46px 46px;color:#dff;font:15px/1.55 "Comic Sans MS","Chalkboard SE",Verdana,sans-serif;text-align:center}
+.wren a{color:#7ff;}.wren a:visited{color:#f9f}
+.wren h1{font-size:30px;color:#ff9ddd;text-shadow:2px 2px 0 #4a0a6a;margin:.1em 0}
+.wren .marq{overflow:hidden;white-space:nowrap;border-top:2px dotted #ff9ddd;border-bottom:2px dotted #ff9ddd;padding:3px 0;color:#ffe066}
+.wren .marq span{display:inline-block;padding-left:100%;animation:marq 14s linear infinite}
+@keyframes marq{to{transform:translateX(-100%)}}
+.tape{margin:14px auto;max-width:420px;padding:8px 10px;color:#000;font-weight:bold;background:repeating-linear-gradient(-45deg,#ffd400 0 14px,#111 14px 28px);border:2px solid #000}
+.tape span{display:block;background:#ffd400;padding:2px 6px}
+.ctr{display:inline-flex;gap:2px;background:#000;padding:3px;border:2px inset #777;vertical-align:middle}
+.ctr i{font:bold 16px/1.1 var(--mono);color:#3f3;background:#111;padding:2px 4px;font-style:normal}
+.wren .nav{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;margin:12px 0}
+.wren .small{font-size:12px;color:#9ab}
+.gb{max-width:560px;margin:0 auto;text-align:left}
+.gb div{background:rgba(255,255,255,.08);border:1px solid #66a;padding:6px 10px;margin:8px 0}
+.gb b{color:#ffe066}
+.tide td,.tide th{color:#dff;border-color:#77a;text-align:center}
+.tide th{background:#223}
+.adm{background:#050805;color:#7dff7d;font:14px/1.55 var(--mono);min-height:100%;padding:16px}
+.adm input{background:#000!important;color:#7dff7d!important;border:1px solid #3a3!important;font-family:var(--mono)!important;letter-spacing:.3em;width:7em;text-align:center}
+.adm button{background:#123;color:#7dff7d;border:1px solid #3a3}
+.adm a{color:#9ff}
+.entry{border-left:3px solid #3a3;padding-left:12px;margin:14px 0;white-space:pre-wrap}
+.bad{color:#ff8a8a}
+
+/* messenger */
+.pager{flex:1;min-height:0;display:flex;flex-direction:column}
+.blist{flex:1;overflow:auto;padding:6px}
+.bgrp{font-weight:bold;padding:6px 4px 2px}
+.bud{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:6px 8px;text-align:left;cursor:pointer;min-height:var(--ctl)}
+.bud:hover,.bud:active{background:var(--navy);color:#fff}
+.bud.off{color:#777}.dot{width:10px;height:10px;border-radius:50%;flex:none;background:#2a2;border:1px solid #060}.dot.away{background:#ec2;border-color:#880}.dot.off{background:#bbb;border-color:#777}
+.chat{flex:1;min-height:0;display:flex;flex-direction:column}
+.chead{display:flex;align-items:center;gap:8px;padding:4px;flex:none}
+.clog{flex:1;min-height:0;overflow:auto;padding:8px 10px;line-height:1.5}
+.clog p{margin:0 0 6px;word-break:break-word}.clog .you b{color:#a00000}.clog .dex b{color:#0000b0}.clog .sys{color:#666;font-style:italic}
+.copts{flex:none;display:flex;flex-direction:column;gap:5px;padding:6px;max-height:48%;overflow:auto}
+.copts .btn{text-align:left;white-space:normal;line-height:1.3}
+.copts .btn[disabled]{opacity:.5;pointer-events:none}
+
+/* dos */
+.dos{flex:1;min-height:0;background:#0c0c0c;color:#c0c0c0;font:calc(var(--fs) + 1px)/1.35 var(--mono);padding:8px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;-webkit-user-select:text;user-select:text}
+.dos form{display:flex;gap:6px;align-items:center}
+.dos input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:#fff;font:inherit;caret-color:#fff;padding:2px 0}
+
+/* notes + photos */
+.notes{flex:1;overflow:auto;padding:12px;background:#fff7a8;color:#2a2200;line-height:1.5;-webkit-user-select:text;user-select:text}
+.notes h3{margin:0 0 6px;font-size:calc(var(--fs) + 3px)}
+.notes ul{list-style:none;margin:8px 0;padding:0}.notes li{padding:3px 0 3px 26px;position:relative}
+.notes li::before{content:"";position:absolute;left:2px;top:6px;width:14px;height:14px;border:2px solid #2a2200;background:#fff}
+.notes li.done{color:#6a6240;text-decoration:line-through}.notes li.done::before{background:#2a2200}
+.notes li.done::after{content:"";position:absolute;left:6px;top:8px;width:6px;height:3px;border-left:2px solid #fff7a8;border-bottom:2px solid #fff7a8;transform:rotate(-45deg)}
+.notes .hintbox{background:rgba(255,255,255,.55);border:1px dashed #8a7a30;padding:8px 10px;margin:8px 0}
+.notes .btn{color:#000}
+.photo{flex:1;min-height:0;display:flex;flex-direction:column;background:#222}
+.photo .view{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px}
+.photo .view svg{max-width:100%;max-height:100%;width:auto;height:auto;border:6px solid #f4f1e6;box-shadow:0 2px 8px rgba(0,0,0,.6)}
+.photo .cap{flex:none;padding:8px 12px;background:var(--face);line-height:1.4}
+
+/* ending */
+#ending{z-index:30000;background:#000;color:#cfd8dc;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:var(--mono)}
+#ending .in{max-width:40ch;display:flex;flex-direction:column;gap:18px;line-height:1.6;font-size:15px}
+#ending .in>*{opacity:0;animation:fade 1.6s forwards}
+#ending h2{font:normal 13px var(--mono);letter-spacing:.25em;margin:0;color:#889}
+#ending .beam{width:6px;height:6px;margin:0 auto;border-radius:50%;background:#ffe9a8;box-shadow:0 0 30px 14px rgba(255,233,168,.5)}
+#ending .btn{align-self:center;font-family:var(--font);color:#000}
+@keyframes fade{to{opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important}.wren .marq span{padding-left:0}}
+</style>
+
+<div id="app">
+  <div id="power" class="layer">
+    <h1>MERIDIAN 98</h1>
+    <p>An adventure inside a computer. Somebody left it on. Somebody left in a hurry.</p>
+    <button class="btn" id="pwr"><i class="led"></i><span>Power on</span></button>
+    <small>Best viewed with sound on, at 800 x 600. Add to Home Screen for full screen.</small>
+  </div>
+  <div id="bios" class="layer" hidden></div>
+  <div id="splash" class="layer" hidden>
+    <div class="logo">Meridian <b>98</b></div>
+    <div class="ver">Second Edition</div>
+    <div class="bar sunk"><i></i></div>
+  </div>
+  <div id="login" class="layer" hidden></div>
+  <div id="os" class="layer" hidden>
+    <div id="icons"></div>
+    <div id="wins"></div>
+    <div id="balloon" hidden></div>
+    <div id="start" class="raise" hidden></div>
+    <div id="tb">
+      <button class="btn startbtn" id="startbtn"></button>
+      <div class="sep"></div>
+      <div id="tasks"></div>
+      <div id="tray"><button id="snd" aria-label="Sound"></button><span id="clock"></span></div>
+    </div>
+  </div>
+  <div id="ending" class="layer" hidden></div>
+  <div id="modal" class="layer" hidden></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const small=()=>window.innerWidth<720;
+const coarse=()=>{try{return matchMedia('(pointer:coarse)').matches}catch(e){return false}};
+const sleep=ms=>new Promise(r=>setTimeout(r,skip?Math.min(ms,25):ms));
+let skip=false,booting=false;
+
+/* ---------- state ---------- */
+const KEY='meridian98.v1';
+let S={user:null,flags:{},mail:{},hints:{},chat:[]};
+try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);S=Object.assign(S,o)}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function flag(k){if(S.flags[k])return;S.flags[k]=true;save();refreshNotes()}
+
+/* ---------- sound ---------- */
+let AC=null,muted=false;
+function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended'){try{AC.resume()}catch(e){}}return AC}
+function tone(f,t,d,type,v){const a=ac();if(!a||muted)return;const o=a.createOscillator(),g=a.createGain();o.type=type||'square';o.frequency.value=f;
+  g.gain.setValueAtTime(v||.05,a.currentTime+t);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+t+d);o.connect(g);g.connect(a.destination);o.start(a.currentTime+t);o.stop(a.currentTime+t+d+.03)}
+const sfx={
+  click(){tone(1500,0,.025,'square',.025)},
+  ding(){tone(880,0,.22,'sine',.09);tone(1320,.11,.32,'sine',.07)},
+  err(){tone(220,0,.14,'square',.06);tone(165,.12,.24,'square',.06)},
+  boot(){[392,523,659,784,1047,784,1319].forEach((f,i)=>tone(f,i*.14,.6,'triangle',.07))},
+  win(){[523,659,784].forEach((f,i)=>tone(f,i*.09,.35,'sine',.06))},
+  modem(){const a=ac();if(!a||muted)return;const n=Math.floor(a.sampleRate*1.5),b=a.createBuffer(1,n,a.sampleRate),d=b.getChannelData(0);
+    for(let i=0;i<n;i++)d[i]=Math.random()*2-1;const s=a.createBufferSource();s.buffer=b;const f=a.createBiquadFilter();f.type='bandpass';
+    f.frequency.setValueAtTime(2100,a.currentTime);f.frequency.linearRampToValueAtTime(800,a.currentTime+1.5);f.Q.value=7;
+    const g=a.createGain();g.gain.value=.1;s.connect(f);f.connect(g);g.connect(a.destination);s.start()}
+};
+
+/* ---------- icons ---------- */
+const sv=(b)=>`<svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true">${b}</svg>`;
+const ICON={
+  computer:sv('<rect x="3.5" y="3.5" width="25" height="18" fill="#c0c0c0" stroke="#000"/><rect x="6.5" y="6.5" width="19" height="12" fill="#008080" stroke="#808080"/><rect x="11.5" y="23.5" width="9" height="3" fill="#c0c0c0" stroke="#000"/><rect x="6.5" y="26.5" width="19" height="3" fill="#c0c0c0" stroke="#000"/>'),
+  folder:sv('<path d="M3.5 8.5h9l2 3h14v16h-25z" fill="#f0d060" stroke="#000"/><path d="M4 13h24" stroke="#fff6c0"/>'),
+  mail:sv('<rect x="3.5" y="7.5" width="25" height="17" fill="#fff" stroke="#000"/><path d="M4 8l12 10L28 8" fill="none" stroke="#000"/><rect x="21" y="4" width="8" height="6" fill="#e03030" stroke="#000"/>'),
+  globe:sv('<circle cx="16" cy="16" r="12.5" fill="#2a6fdb" stroke="#000"/><path d="M8 12c4-4 6 0 8-3 3 3 7 1 8 5-3 4-6 2-7 7-4 0-3-5-7-4z" fill="#34a044"/><path d="M4 16h24M16 4v24" stroke="#9cc4ff" fill="none"/>'),
+  chat:sv('<path d="M3.5 5.5h19v13h-9l-5 5v-5h-5z" fill="#ffee70" stroke="#000"/><path d="M13.5 12.5h15v11h-3v4l-4-4h-8z" fill="#fff" stroke="#000"/>'),
+  doc:sv('<path d="M7.5 3.5h13l5 5v20h-18z" fill="#fff" stroke="#000"/><path d="M10 12h12M10 16h12M10 20h12M10 24h8" stroke="#808080"/>'),
+  dos:sv('<rect x="3.5" y="5.5" width="25" height="21" fill="#000" stroke="#808080"/><path d="M7 11l4 3-4 3M13 19h8" stroke="#c0c0c0" fill="none"/><rect x="3.5" y="5.5" width="25" height="3" fill="#808080"/>'),
+  bin:sv('<path d="M9.5 9.5h13l-1 18h-11z" fill="#c8c8c8" stroke="#000"/><path d="M7 9.5h18M13 6.5h6v3h-6M13 13v11M16 13v11M19 13v11" stroke="#000" fill="none"/>'),
+  notes:sv('<rect x="5.5" y="3.5" width="21" height="24" fill="#fff59a" stroke="#000"/><path d="M9 10h14M9 15h14M9 20h9" stroke="#a08000"/><rect x="12" y="1" width="8" height="5" fill="#c0c0c0" stroke="#000"/>'),
+  photo:sv('<rect x="3.5" y="6.5" width="25" height="19" fill="#fff" stroke="#000"/><rect x="6" y="9" width="20" height="14" fill="#7ec0ff"/><path d="M6 23l7-8 5 5 3-3 5 6z" fill="#3a8a3a"/><circle cx="21" cy="12.5" r="2" fill="#ffe040"/>'),
+  flag:sv('<path d="M4 6c4-2 7 2 11 0v9c-4 2-7-2-11 0z" fill="#e53a2a"/><path d="M16 6c4-2 7 2 11 0v9c-4 2-7-2-11 0z" fill="#3aa83a"/><path d="M4 16c4-2 7 2 11 0v9c-4 2-7-2-11 0z" fill="#2a6fdb"/><path d="M16 16c4-2 7 2 11 0v9c-4 2-7-2-11 0z" fill="#f0c020"/>'),
+  power:sv('<circle cx="16" cy="17" r="9" fill="none" stroke="#000" stroke-width="3"/><path d="M16 5v11" stroke="#000" stroke-width="3"/>'),
+  key:sv('<circle cx="10" cy="16" r="6" fill="#f0c020" stroke="#000"/><path d="M15 16h13M24 16v5M28 16v4" stroke="#000" fill="none"/>'),
+  reset:sv('<path d="M25 16a9 9 0 1 1-3-6.7" fill="none" stroke="#000" stroke-width="3"/><path d="M23 4v7h-7" fill="#000" stroke="#000"/>'),
+  spk:'<svg viewBox="0 0 18 18" shape-rendering="crispEdges"><path d="M2 7h3l4-3v10l-4-3H2z" fill="#000"/><path d="M12 6c2 2 2 4 0 6M14 4c3 3 3 7 0 10" stroke="#000" fill="none"/></svg>',
+  spkoff:'<svg viewBox="0 0 18 18" shape-rendering="crispEdges"><path d="M2 7h3l4-3v10l-4-3H2z" fill="#000"/><path d="M12 6l5 6M17 6l-5 6" stroke="#c00" stroke-width="1.6" fill="none"/></svg>'
+};
+
+/* ---------- dialogs ---------- */
+function dlg(o){
+  const m=$('#modal');m.hidden=false;
+  const ic=o.icon||'i';
+  m.innerHTML=`<div class="dlg raise" role="dialog" aria-modal="true"><div class="tbar"><span class="tt">${esc(o.title||'Meridian 98')}</span></div>
+    <div class="dbody"><div class="dicon ${ic}">${ic==='w'?'!':ic==='q'?'?':ic==='x'?'×':'i'}</div><div class="dtext sel">${o.html||esc(o.text||'')}</div></div><div class="dbtns"></div></div>`;
+  const bb=$('.dbtns',m);
+  (o.buttons||[{label:'OK'}]).forEach(b=>{const x=document.createElement('button');x.className='btn';x.textContent=b.label;
+    x.onclick=()=>{sfx.click();m.hidden=true;m.innerHTML='';if(b.fn)b.fn()};bb.appendChild(x)});
+  const f=$('.btn',bb);if(f)f.focus();
+  if(o.sound!==false)(ic==='x'||ic==='w'?sfx.err:sfx.ding)();
+}
+
+/* ---------- window manager ---------- */
+let zTop=10;const wins=new Map();let focused=null;
+function openWin(id,o){
+  if(wins.has(id)){focusWin(id);return wins.get(id)}
+  const el=document.createElement('div');el.className='win raise';el.dataset.id=id;
+  const n=wins.size,vw=$('#wins').clientWidth||innerWidth,vh=$('#wins').clientHeight||innerHeight;
+  const W=Math.min(o.w||440,vw-8),H=Math.min(o.h||340,vh-8);
+  el.style.width=W+'px';el.style.height=H+'px';
+  el.style.left=Math.max(4,Math.min(vw-W-4,(small()?4:104)+(n*28)%150))+'px';el.style.top=Math.max(4,Math.min(vh-H-4,18+(n*26)%120))+'px';
+  el.innerHTML=`<div class="tbar"><span class="ti">${ICON[o.icon]||''}</span><span class="tt">${esc(o.title)}</span>
+    <button class="tb" data-a="min" aria-label="Minimize">_</button><button class="tb" data-a="max" aria-label="Maximize">&#9633;</button><button class="tb" data-a="close" aria-label="Close">&#215;</button></div>
+    <div class="wbody"></div><div class="grip"></div>`;
+  $('#wins').appendChild(el);
+  const btn=document.createElement('button');btn.className='task';btn.innerHTML=`${ICON[o.icon]||''}<span>${esc(o.title)}</span>`;
+  btn.onclick=()=>{sfx.click();const w=wins.get(id);if(focused===id&&!w.el.hidden)minWin(id);else focusWin(id)};
+  $('#tasks').appendChild(btn);
+  const w={id,el,btn,body:$('.wbody',el),onClose:o.onClose,setTitle(t){$('.tt',el).textContent=t;$('span',btn).textContent=t}};
+  wins.set(id,w);
+  el.addEventListener('pointerdown',()=>{if(focused!==id)focusWin(id)},true);
+  $('.tbar',el).addEventListener('click',e=>{const a=e.target.closest('.tb');if(!a)return;sfx.click();
+    if(a.dataset.a==='close')closeWin(id);else if(a.dataset.a==='min')minWin(id);else el.classList.toggle('max')});
+  $('.tbar',el).addEventListener('dblclick',e=>{if(!e.target.closest('.tb'))el.classList.toggle('max')});
+  $('.tbar',el).addEventListener('pointerdown',e=>{
+    if(e.target.closest('.tb')||small()||el.classList.contains('max'))return;
+    const sx=e.clientX,sy=e.clientY,ox=el.offsetLeft,oy=el.offsetTop,bar=e.currentTarget;
+    try{bar.setPointerCapture(e.pointerId)}catch(x){}
+    const mv=ev=>{el.style.left=Math.max(-el.offsetWidth+70,ox+ev.clientX-sx)+'px';el.style.top=Math.max(0,Math.min($('#wins').clientHeight-24,oy+ev.clientY-sy))+'px'};
+    const up=()=>{bar.removeEventListener('pointermove',mv);bar.removeEventListener('pointerup',up)};
+    bar.addEventListener('pointermove',mv);bar.addEventListener('pointerup',up)});
+  $('.grip',el).addEventListener('pointerdown',e=>{
+    const sx=e.clientX,sy=e.clientY,ow=el.offsetWidth,oh=el.offsetHeight,g=e.currentTarget;
+    try{g.setPointerCapture(e.pointerId)}catch(x){}
+    const mv=ev=>{el.style.width=Math.max(240,ow+ev.clientX-sx)+'px';el.style.height=Math.max(160,oh+ev.clientY-sy)+'px'};
+    const up=()=>{g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up)};
+    g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);e.stopPropagation()});
+  focusWin(id);return w;
+}
+function focusWin(id){
+  const w=wins.get(id);if(!w)return;
+  w.el.hidden=false;w.el.style.zIndex=++zTop;focused=id;
+  wins.forEach((x,k)=>{x.el.classList.toggle('inactive',k!==id);x.btn.classList.toggle('on',k===id)});
+  $('#start').hidden=true;
+}
+function minWin(id){const w=wins.get(id);if(!w)return;w.el.hidden=true;w.btn.classList.remove('on');
+  if(focused===id){focused=null;let top=null,z=0;wins.forEach((x,k)=>{if(!x.el.hidden&&+x.el.style.zIndex>z){z=+x.el.style.zIndex;top=k}});if(top)focusWin(top)}}
+function closeWin(id){const w=wins.get(id);if(!w)return;if(w.onClose)w.onClose();w.el.remove();w.btn.remove();wins.delete(id);
+  if(focused===id){focused=null;let top=null,z=0;wins.forEach((x,k)=>{if(!x.el.hidden&&+x.el.style.zIndex>z){z=+x.el.style.zIndex;top=k}});if(top)focusWin(top)}}
+function closeAll(){Array.from(wins.keys()).forEach(closeWin)}
+
+/* ---------- file system ---------- */
+const F=(t)=>({t});
+const PLAIN_LAST=
+`SAM,
+
+If the lamp's name opened this, then Dex kept
+his promise and you kept yours.
+
+I am not lost. I am at Marrow Point.
+
+The light was never dead. When the Coast Guard
+closed the station in 1987, Harlan hid the lamp
+instead of letting them scrap it. I found it in
+the oil room under a tarp, still wrapped in his
+coat. Twelve years in the dark and it is fine.
+
+I'm relighting it tonight. Midnight. New Year.
+
+Dad's rule was never about danger. After Harlan
+he just couldn't stand to look at it. He will
+understand when he sees the beam from the porch.
+
+Come out whenever you want. Bring the thermos.
+Bring Dex, he owes me a guestbook.
+
+- W
+
+P.S. Keep all of it. The site, the mail, the
+journal. Someone should remember what 1999
+looked like from in here.`;
+function scramble(s){let h=7;return s.split('').map((c,i)=>{if(c==='\n')return'\n';h=(h*31+c.charCodeAt(0)+i)%9973;return String.fromCharCode(33+(h%90))}).join('')}
+const FS={d:{
+  'WINDOWS':{d:{
+    'README.TXT':F('MERIDIAN 98 SECOND EDITION\n\nThis is a work of fiction. Any resemblance to a real\noperating system is a tribute.\n\nSounds: on.\nYear 2000 status: READY (probably).'),
+    'SYSTEM.INI':F('[boot]\nshell=explorer.exe\nuser=wren\n\n[meridian]\nYear2000=ready?\nscreensaver=starfield\n')}},
+  'MY DOCUMENTS':{d:{
+    'TODO.TXT':F('- finish Harbor site (stars!!)\n- fix the guestbook (ask Dex)\n- ask Dex about the lamp. NOT in writing.\n- the Gull: fuel, flares, thermos, blanket\n- tell Dad? no. not yet.\n- tell Sam. in person. soon.'),
+    'ESSAY.TXT':F('ENGLISH 11 - "The Light That Wasn\'t"\n\nA lighthouse is a promise made of glass: someone is\nawake out here so you do not have to be.\n\nWhen a lighthouse goes dark, the promise does not end.\nIt just waits for a person stubborn enough to keep it.\n\n(Mr. Ames: yes, this is about Marrow Point. Please do\nnot tell my father I wrote about it.)')}},
+  'WREN':{d:{
+    'LAST.MSG':{t:PLAIN_LAST.replace(/([^\n])\n(?!\n)/g,'$1 '),enc:true},
+    'README.TXT':F('Sam,\n\nThis folder is for you. LAST.MSG is locked.\nYou will know where to find the key.\n\n- W')}},
+  'AUTOEXEC.BAT':F('@echo off\nPATH C:\\WINDOWS;C:\\WREN\nSET BLASTER=A220 I5 D1 T4\nmode con codepage prepare=((437) C:\\WINDOWS\\COUNTRY.SYS)')
+}};
+const BIN={d:{
+  'old_pin.txt':F('admin pin (OLD): 114\n\nchanged it after Dex figured out the pattern.\nthe new one is harder. it lives in the water.'),
+  'draft to sam.txt':F('Sam -\n\nI started this three times.\n\nIf I am not back by New Year\'s, go through my things.\nThe site has a back room. The PIN is a tide.\nDex has a name I need him to say out loud.\n\nDon\'t tell Dad where I went until you have read\neverything. Then tell him first.\n\n- W'),
+  'y2k checklist.txt':F('[x] back up the floppy\n[x] fill the bathtub (Aunt Pat insists)\n[ ] unplug the modem at midnight?\n[ ] tell Sam I love him (do it in person)')
+}};
+function dosKey(n,name){return Object.keys(n.d||{}).find(k=>k.toLowerCase()===name.toLowerCase())}
+
+/* ---------- apps ---------- */
+function notepad(id,title,text,enc){
+  const w=openWin('np:'+id,{title:title+' - Notepad',icon:'doc',w:420,h:320});
+  if(!w.body.innerHTML){
+    w.body.innerHTML=`<div class="menubar"><span>File</span><span>Edit</span><span>Search</span><span>Help</span></div><textarea class="np sunk" readonly spellcheck="false"></textarea>`;
+    $('textarea',w.body).value=enc&&!S.flags.solved?`MERIDIAN CRYPT 1.0 - KEY REQUIRED\n(open MS-DOS Prompt and use DECRYPT)\n\n${scramble(text)}`:text}
+}
+function explorer(id,title,root,drive){
+  const w=openWin(id,{title,icon:id==='bin'?'bin':'computer',w:480,h:340});let path=[];
+  const node=()=>path.reduce((n,p)=>n.d[p],root);
+  function render(){
+    const n=node();const names=Object.keys(n.d).sort((a,b)=>(!!n.d[b].d)-(!!n.d[a].d)||a.localeCompare(b));
+    w.body.innerHTML=`<div class="tool"><button class="btn sm up">&#8679; Up</button><div class="addr sunk">${esc(drive+path.join('\\'))}</div></div>
+      <div class="flist sunk">${names.length?names.map(k=>`<button class="it" data-k="${esc(k)}">${n.d[k].d?ICON.folder:ICON.doc}<span>${esc(k)}</span></button>`).join(''):'<i style="grid-column:1/-1;color:#666">This folder is empty.</i>'}</div>
+      <div class="status"><div>${names.length} object(s)</div></div>`;
+    $('.up',w.body).disabled=!path.length;
+    $('.up',w.body).onclick=()=>{sfx.click();path.pop();render()};
+    $$('.it',w.body).forEach(b=>b.onclick=()=>{sfx.click();const k=b.dataset.k,c=n.d[k];
+      if(c.d){path.push(k);render()}else notepad(id+'/'+path.join('/')+'/'+k,k,c.t,c.enc)})}
+  render();
+}
+/* mail */
+const MAILS=[
+ {id:'dex',from:'Dex <dex@starlight.harbor>',subj:'re: re: PIN?? (call me)',date:'12/29/99',body:
+`W,
+
+I tried the Harbor admin page again. Still locked. You said the PIN was "a tide" and that I would figure it out. I did not figure it out.
+
+The tide chart is still up on the site (tides page). If I remember right you said Tuesday's tides: high, low, high, in feet, no dots or dashes.
+
+Also you stopped answering PalPager. Your mom says the Gull is gone from the boathouse. Tell me you are not doing something stupid.
+
+- Dex`},
+ {id:'mom',from:'Mom <calloway.home@meridian.net>',subj:'Please',date:'12/30/99',body:
+`Wren,
+
+I'm not angry. I just want to hear your voice.
+
+The boathouse is empty and your father is pretending not to be worried. He has been standing at the window facing the point since last night, and he thinks I haven't noticed.
+
+Sam is going to try your computer. If you read this on your screen, tell Sam first.
+
+Love, Mom`},
+ {id:'host',from:'StarlightHost Support',subj:'Your counter passed 3,000 visitors!',date:'12/20/99',body:
+`Dear Webmaster,
+
+Congratulations! Starlight Harbor received 3,141 visits this month, putting you in the top 12% of free homepages on the Harbor Ring.
+
+Don't forget to add the "Best Viewed With Any Browser" badge to your front page.
+
+Thank you for hosting with us!`},
+ {id:'pat',from:'Aunt Pat',subj:'FWD: FWD: FWD: Y2K SURVIVAL TIPS!!!',date:'12/15/99',body:
+`1. Fill your bathtub with water.
+2. Do NOT ride elevators at midnight.
+3. Back up EVERYTHING.
+4. If you do not forward this to 10 people the computers will know.
+
+Love, Pat
+
+P.S. Sam says I am "doing it wrong." Is this thing on?`}
+];
+function mailApp(){
+  const w=openWin('mail',{title:'Inbox - Meridian Mail',icon:'mail',w:600,h:420});
+  let sel=null;
+  function render(){
+    w.body.innerHTML=`<div class="menubar"><span>File</span><span>Edit</span><span>View</span><span>Help</span></div>
+      <div class="mail${sel?' reading':''}"><div class="mlist sunk">${MAILS.map(m=>`<button class="mrow${S.mail[m.id]?'':' unread'}${sel===m.id?' on':''}" data-id="${m.id}"><span>${S.mail[m.id]?'&#9993;':'&#9733;'}</span><span>${esc(m.from.replace(/<.*>/,'').trim())}</span><span class="subj">${esc(m.subj)}</span><span>${m.date}</span></button>`).join('')}</div>
+      <div class="mreadwrap sunk">${sel?(()=>{const m=MAILS.find(x=>x.id===sel);return `<div class="mhead sel"><button class="btn sm mailback">&#9664; Inbox</button><div><b>From:</b> ${esc(m.from)}</div><div><b>Date:</b> ${m.date}</div><div><b>Subject:</b> ${esc(m.subj)}</div></div><div class="mread sel">${esc(m.body)}</div>`})():'<div class="mread" style="color:#777">Select a message to read it.</div>'}</div></div>
+      <div class="status"><div>${MAILS.length} message(s), ${MAILS.filter(m=>!S.mail[m.id]).length} unread</div></div>`;
+    $$('.mrow',w.body).forEach(b=>b.onclick=()=>{sfx.click();sel=b.dataset.id;S.mail[sel]=true;save();if(sel==='dex')flag('readDex');render();refreshNotes()});
+    const bk=$('.mailback',w.body);if(bk)bk.onclick=()=>{sfx.click();sel=null;render()};
+  }
+  render();
+}
+/* navigator */
+const P={};
+const tideRows=[['Mon 27','04:30 H 8','10:55 L 1','17:15 H 7'],['Tue 28','05:12 H 9','11:40 L 2','17:58 H 6'],['Wed 29','05:55 H 8','12:21 L 2','18:40 H 7'],['Thu 30','06:38 H 7','13:03 L 3','19:22 H 6']];
+function srch(q){return `<form class="srch" data-f="search"><input type="search" name="q" value="${esc(q||'')}" placeholder="Search the web" autocomplete="off" autocapitalize="off"><button>Search</button></form>`}
+P['meridian.net']=()=>({t:'Meridian Start',h:`<h1 style="font-family:Arial,sans-serif;color:#000080">Meridian <span style="color:#c00">Start</span></h1><div>Your starting point on the Web</div>${srch()}
+ <div class="news"><b>Top story:</b> Y2K - Are you ready? Our 5-step checklist for the big night. <i>(Tip: Aunt Pat says fill the bathtub.)</i></div>
+ <h2>Web Directory</h2><div class="cols">
+ <div><b>Homepages</b><br><a data-go="starlight.harbor">Starlight Harbor</a> - Wren's corner of the Web<br><a data-go="starlight.harbor/links">The Harbor Ring</a></div>
+ <div><b>Local &amp; History</b><br><a data-go="marrowpoint.org">Marrow Point Historical Society</a><br><a data-go="weather.meridian.net">Coastal Weather</a></div>
+ <div><b>Try searching</b><br><a data-go="meridian.net/search?q=lighthouse">lighthouse</a><br><a data-go="meridian.net/search?q=tide+chart">tide chart</a></div></div>
+ <p style="color:#666;font-size:12px;margin-top:22px">&copy; 1999 Meridian Net. Best viewed in 800x600 with any browser.</p>`});
+P['starlight.harbor']=()=>({t:'Starlight Harbor',h:`<div class="wren" style="margin:-14px -16px -28px;padding:14px 16px 28px;min-height:100%">
+  <div class="marq"><span>&#9733; Welcome to Starlight Harbor &#9733; Wren's corner of the Web &#9733; sign the guestbook!! &#9733; no frames, no Flash, no worries &#9733;</span></div>
+  <h1>&#9733; Starlight Harbor &#9733;</h1><div>a homepage about boats, tides, and things that glow</div>
+  <p>You are visitor number <span class="ctr"><i>0</i><i>0</i><i>3</i><i>1</i><i>4</i><i>1</i></span></p>
+  <div class="tape"><span>&#9888; UNDER CONSTRUCTION &#9888;<br>(it is always under construction)</span></div>
+  <div class="nav"><a data-go="starlight.harbor/tides">Tide Chart</a><a data-go="starlight.harbor/guestbook">Guestbook</a><a data-go="starlight.harbor/links">Links</a><a data-go="marrowpoint.org">Marrow Point</a></div>
+  <hr class="rule"><p>Hi! I'm Wren. I live by the water and I like it when things are lit up at night. This site is my notebook. Look around, leave a note, don't steal my GIFs.</p>
+  <p class="small">Best viewed in Netscape 4.7 or IE 5 at 800x600. Hosted by StarlightHost. Made with Notepad.<br><a data-go="starlight.harbor/admin">webmaster</a></p></div>`});
+P['starlight.harbor/tides']=()=>({t:'Tide Chart - Starlight Harbor',h:`<div class="wren" style="margin:-14px -16px -28px;padding:14px 16px 28px;min-height:100%"><h1>Tide Chart</h1><div>Harbor &amp; Marrow Point. Week of Dec 27. Heights in feet. H = high, L = low.</div>
+  <div class="tablewrap" style="margin:14px 0"><table class="tide" style="margin:0 auto"><tr><th>Day</th><th>Tide 1</th><th>Tide 2</th><th>Tide 3</th></tr>${tideRows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</table></div>
+  <p class="small">Slack water is the quiet minute between tides. Best time to cross to the point. Don't tell Dad.</p><div class="nav"><a data-go="starlight.harbor">&laquo; back to Starlight Harbor</a></div></div>`});
+P['starlight.harbor/guestbook']=()=>({t:'Guestbook - Starlight Harbor',h:`<div class="wren" style="margin:-14px -16px -28px;padding:14px 16px 28px;min-height:100%"><h1>Guestbook</h1>
+  <div class="gb"><div><b>SurfDude99</b> (12/02)<br>cool site!! love the stars. check out my page (it's under construction)</div>
+  <div><b>Dex</b> (12/18)<br>W did you get the tide thing sorted?? Also my entry keeps showing up twice. Fix your guestbook!!</div>
+  <div><b>Mom</b> (12/22)<br>Sam showed me how to sign this. Dinner is at 6. Please come to dinner.</div>
+  <div><b>anonymous</b> (12/27)<br>The light on Marrow Point was ON last night. Anyone else see it? Probably a boat.</div></div>
+  <div class="nav"><a data-go="starlight.harbor">&laquo; back to Starlight Harbor</a></div></div>`});
+P['starlight.harbor/links']=()=>({t:'Links - Starlight Harbor',h:`<div class="wren" style="margin:-14px -16px -28px;padding:14px 16px 28px;min-height:100%"><h1>The Harbor Ring</h1><div>Homepages by people who live near water.</div>
+  <div class="nav" style="flex-direction:column;gap:8px"><a data-go="marrowpoint.org">Marrow Point Historical Society</a><a data-go="weather.meridian.net">Coastal Weather</a><a data-go="meridian.net">Meridian Start</a></div>
+  <p class="small">[ &lt;&lt; prev ] [ random ] [ next &gt;&gt; ]<br>(the ring is four sites long)</p><div class="nav"><a data-go="starlight.harbor">&laquo; back</a></div></div>`});
+P['starlight.harbor/admin']=(extra)=>({t:'Admin Login',h:`<div class="adm"><div>STARLIGHT HARBOR ADMIN</div><div>=======================</div><p>Enter 3-digit PIN:</p>
+  <form data-f="pin"><input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="3" name="pin" autocomplete="off" aria-label="PIN"> <button>ENTER</button></form>
+  <p class="bad">${extra||''}</p><p style="opacity:.7">Hint from the webmaster: it's a tide.</p><p><a data-go="starlight.harbor">&laquo; back</a></p></div>`});
+P['starlight.harbor/admin/journal']=()=>S.flags.adminOpened?({t:'Private Journal',h:`<div class="adm"><div>PRIVATE JOURNAL - W. Calloway</div><div>(back room. if you're reading this, you got in.)</div>
+  <div class="entry"><b>Dec 14</b>
+Dad's rule: never go to Marrow Point. Dad never said why.
+The light has been dark since 1987, and tonight it blinked. Once. I counted.</div>
+  <div class="entry"><b>Dec 21</b>
+The keeper's logbook is real. Harlan Pike wrote down everything, including that he named the lamp. Dex knows the name. His grandfather was Harlan's deckhand. I made Dex swear to tell nobody but me.</div>
+  <div class="entry"><b>Dec 28</b>
+Taking the Gull out at slack tide tomorrow.
+Everything I want Sam to know is in C:\\WREN\\LAST.MSG. I locked it with the lamp's name. If you're reading this, Sam: ask Dex. Tell him I said it's time.</div>
+  <p><a data-go="starlight.harbor">&laquo; back to site</a></p></div>`}):P['starlight.harbor/admin']('ACCESS DENIED.');
+P['marrowpoint.org']=()=>({t:'Marrow Point Historical Society',h:`<h1 style="color:#123a5e">Marrow Point Historical Society</h1><p><i>Preserving the memory of the Marrow Point Light since 1991.</i></p><hr>
+  <p>Welcome. The Marrow Point Light stands on a rock a mile off the harbor mouth. Visitors are asked to admire it from shore. <b>The point is closed to landing.</b></p>
+  <ul><li><a data-go="marrowpoint.org/history">History of the Light</a></li><li><a data-go="weather.meridian.net">Coastal Weather</a></li><li><a data-go="starlight.harbor/links">The Harbor Ring</a></li></ul><p style="color:#777;font-size:12px">Webmaster: P. Okafor (volunteer). Last updated: March 1998.</p>`});
+P['marrowpoint.org/history']=()=>({t:'History of the Light',h:`<h1 style="color:#123a5e">History of the Light</h1><p><b>1871</b> - Marrow Point Light first lit. Fourth-order lens, kerosene lamp.</p>
+  <p><b>1931</b> - Electrified; the original lamp kept as a backup.</p><p><b>1968-1987</b> - Harlan Pike, last keeper, tends the light for nineteen years.</p>
+  <p><b>1987</b> - Station decommissioned by the Coast Guard. The light is extinguished. <b>The original lamp was never accounted for.</b> Harlan Pike's logbook is also missing.</p>
+  <p><a data-go="marrowpoint.org">&laquo; back</a></p>`});
+P['weather.meridian.net']=()=>({t:'Coastal Weather',h:`<h1>Coastal Weather</h1><p><b>Tonight:</b> Clear, cold. Wind NW 5 knots. Seas calm.<br><b>Midnight:</b> Perfect visibility to the horizon. Good night for a bonfire, a countdown, or a light.</p><p><a data-go="meridian.net">&laquo; Meridian Start</a></p>`});
+function searchPage(q){
+  const ql=q.toLowerCase();const res=[];
+  if(/marrow|light|keeper|harlan|point/.test(ql))res.push(['History of the Light - Marrow Point Historical Society','marrowpoint.org/history','1871 Marrow Point Light first lit... 1987 station decommissioned... the original lamp was never accounted for.'],['Marrow Point Historical Society','marrowpoint.org','Preserving the memory of the Marrow Point Light since 1991.']);
+  if(/tide|chart|harbor|starlight|wren|boat|gull/.test(ql))res.push(['Starlight Harbor','starlight.harbor','Wren\'s corner of the Web. Boats, tides, and things that glow. Sign the guestbook!'],['Tide Chart - Starlight Harbor','starlight.harbor/tides','Harbor & Marrow Point. Week of Dec 27. Heights in feet.']);
+  if(/weather|forecast/.test(ql))res.push(['Coastal Weather','weather.meridian.net','Tonight: clear, cold. Seas calm.']);
+  return {t:'Search: '+q,h:`<h1 style="font-family:Arial,sans-serif;color:#000080;font-size:22px">Meridian Search</h1>${srch(q)}${res.length?`<p>Found ${res.length} document(s) for <b>${esc(q)}</b>:</p>${res.map(r=>`<p><a data-go="${r[1]}"><b>${esc(r[0])}</b></a><br>${esc(r[2])}<br><span style="color:#080;font-size:12px">${r[1]}</span></p>`).join('')}`:`<p>No documents match <b>${esc(q)}</b>.</p><p>Try: lighthouse, tide chart, weather.</p>`}`};
+}
+function normUrl(u){u=String(u).trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/index\.html?$/,'').replace(/\/+$/,'');return u||'meridian.net'}
+function getPage(u,extra){
+  if(u.startsWith('meridian.net/search?q='))return searchPage(decodeURIComponent(u.slice(22).replace(/\+/g,' ')));
+  if(u==='starlight.harbor/admin')return P[u](extra);
+  if(P[u])return P[u]();
+  return {t:'Page cannot be displayed',h:`<h1 style="font-family:Arial,sans-serif;font-size:20px">The page cannot be displayed</h1><p>The page you are looking for is currently unavailable. The Web site might be experiencing technical difficulties.</p><ul><li>Check the address <code>${esc(u)}</code> for typing errors.</li><li>Click the <a data-go="meridian.net">Home</a> link to start from Meridian Start.</li></ul><p style="color:#777">HTTP 404 - File not found</p>`};
+}
+function navApp(){
+  const w=openWin('nav',{title:'Meridian Navigator',icon:'globe',w:680,h:480});
+  if(w.body.innerHTML)return;
+  let hist=[],pos=-1;
+  w.body.innerHTML=`<div class="menubar"><span>File</span><span>Edit</span><span>View</span><span>Go</span><span>Favorites</span><span>Help</span></div>
+    <div class="navtool"><button class="btn sm" data-n="back" aria-label="Back">&#9664;</button><button class="btn sm" data-n="fwd" aria-label="Forward">&#9654;</button><button class="btn sm" data-n="home" aria-label="Home">&#8962;</button>
+    <input id="url" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Address"><button class="btn sm" data-n="go">Go</button><i class="throb"></i></div>
+    <div class="pgwrap sunk"><div class="pg"></div></div><div class="status"><div class="st">Done</div></div>`;
+  const pg=$('.pg',w.body),url=$('#url',w.body),st=$('.st',w.body),th=$('.throb',w.body),wrap=$('.pgwrap',w.body);
+  let busy=0;
+  async function go(u,push=true,extra){
+    u=normUrl(u);const token=++busy;th.classList.add('go');st.textContent='Connecting to '+u.split('/')[0]+'...';url.value=u;
+    if(!S.flags.modem){S.flags.modem=1;sfx.modem();await sleep(1400)}else await sleep(380);
+    if(token!==busy)return;
+    const p=getPage(u,extra);
+    if(push){hist=hist.slice(0,pos+1);hist.push(u);pos=hist.length-1}
+    pg.innerHTML=p.h;pg.dataset.u=u;wrap.scrollTop=0;w.setTitle(p.t+' - Meridian Navigator');th.classList.remove('go');st.textContent='Done';url.value=u;
+    if(u==='starlight.harbor/admin/journal'&&S.flags.adminOpened)flag('readJournal');
+    if(u==='starlight.harbor/tides')flag('sawTides');
+    if(u==='starlight.harbor')flag('sawSite');
+  }
+  pg.addEventListener('click',e=>{const a=e.target.closest('[data-go]');if(a){e.preventDefault();sfx.click();go(a.dataset.go)}});
+  pg.addEventListener('submit',e=>{e.preventDefault();const f=e.target.dataset.f;
+    if(f==='search'){const q=new FormData(e.target).get('q')||'';go('meridian.net/search?q='+encodeURIComponent(String(q).trim()).replace(/%20/g,'+'))}
+    if(f==='pin'){const v=String(new FormData(e.target).get('pin')||'').trim();
+      if(v==='926'){flag('adminOpened');sfx.win();go('starlight.harbor/admin/journal')}
+      else{sfx.err();go('starlight.harbor/admin',false,v==='114'?'That PIN was retired. Try a newer one.':v?'PIN '+esc(v)+' rejected.':'Enter a PIN.')}}});
+  w.body.addEventListener('click',e=>{const b=e.target.closest('[data-n]');if(!b)return;sfx.click();const n=b.dataset.n;
+    if(n==='back'&&pos>0){pos--;go(hist[pos],false)}if(n==='fwd'&&pos<hist.length-1){pos++;go(hist[pos],false)}
+    if(n==='home')go('meridian.net');if(n==='go')go(url.value)});
+  url.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go(url.value);url.blur()}});
+  go('meridian.net');
+}
+/* messenger */
+const TOPICS=[
+ {id:'hello',when:()=>!S.flags.t_hello,ask:"It's Sam. I'm on Wren's computer.",say:["SAM?? oh thank god.","ok. ok. hi. Wren's been gone since Wednesday. your mom called mine.","what do you need?"]},
+ {id:'where',when:()=>S.flags.t_hello&&!S.flags.t_where,ask:'Do you know where she went?',say:["She kept talking about Marrow Point. I brought up your dad's rule and she just laughed.","Said she was going to \"finish what Harlan started.\" I thought she was being dramatic."]},
+ {id:'site',when:()=>S.flags.t_hello&&!S.flags.t_site,ask:"Why can't you get into the Harbor site?",say:["She put a PIN on /admin. Said it's a tide.","There's a tide chart on her site. Tuesday's, I think? I sent her an email about it. Check her inbox."]},
+ {id:'lamp',when:()=>S.flags.adminOpened&&!S.flags.dexLamp,ask:"Wren's journal says you know the lamp's name.",say:["...she wrote that down?","Harlan Pike called the lamp Marigold. My grandad was his deckhand and made me swear.","If that's what she locked her message with, she trusts you. Go see what she left.","And Sam? Don't go out there alone."],after:()=>flag('dexLamp')},
+ {id:'thanks',when:()=>S.flags.dexLamp&&!S.flags.t_thanks,ask:'Thanks, Dex.',say:["Anytime. Tell me what she says.","...and tell her the guestbook is still broken."]}
+];
+function pagerApp(){
+  const w=openWin('pager',{title:'PalPager',icon:'chat',w:380,h:460});
+  if(w.body.innerHTML)return;
+  function buddies(){
+    w.body.innerHTML=`<div class="menubar"><span>File</span><span>View</span><span>Help</span></div><div class="blist sunk">
+      <div class="bgrp">Online (1)</div><button class="bud" data-b="dex"><i class="dot"></i>Dex_Rocks99</button>
+      <div class="bgrp">Away (1)</div><button class="bud" data-b="mom"><i class="dot away"></i>MomOfWren</button>
+      <div class="bgrp">Offline (1)</div><button class="bud off" data-b="wren"><i class="dot off"></i>Wren_C</button></div><div class="status"><div>PalPager Ready</div></div>`;
+    $$('.bud',w.body).forEach(b=>b.onclick=()=>{sfx.click();const k=b.dataset.b;
+      if(k==='dex')chat();else dlg({icon:'i',title:'PalPager',text:k==='mom'?'MomOfWren is away: "Call me. Please."':'Wren_C is offline. Last seen: Wednesday, 11:58 PM.'})})}
+  function chat(){
+    w.body.innerHTML=`<div class="chat"><div class="chead raise"><button class="btn sm" id="cb">&#9664; Buddies</button><b>Dex_Rocks99</b></div><div class="clog sunk sel"></div><div class="copts"></div></div>`;
+    const log=$('.clog',w.body),opts=$('.copts',w.body);
+    const add=(who,t,snd)=>{const p=document.createElement('p');p.className=who;p.innerHTML=who==='sys'?esc(t):`<b>${who==='you'?'Sam':'Dex_Rocks99'}:</b> ${esc(t)}`;log.appendChild(p);log.scrollTop=log.scrollHeight;if(snd)sfx.ding()};
+    if(!S.chat.length){S.chat.push(['dex','W?? is that you??']);save()}
+    S.chat.forEach(([who,t])=>add(who,t));
+    $('#cb',w.body).onclick=()=>{sfx.click();buddies()};
+    function showOpts(){
+      opts.innerHTML='';const av=TOPICS.filter(t=>t.when());
+      if(!av.length){opts.innerHTML='<i style="color:#666;padding:4px">Dex has nothing more to say right now.</i>';return}
+      av.forEach(t=>{const b=document.createElement('button');b.className='btn';b.textContent=t.ask;b.onclick=async()=>{
+        sfx.click();$$('.btn',opts).forEach(x=>x.disabled=true);S.chat.push(['you',t.ask]);add('you',t.ask);S.flags['t_'+t.id]=true;save();
+        for(const line of t.say){const ty=document.createElement('p');ty.className='sys';ty.textContent='Dex_Rocks99 is typing...';log.appendChild(ty);log.scrollTop=log.scrollHeight;
+          await sleep(600+Math.min(line.length*14,900));ty.remove();S.chat.push(['dex',line]);save();add('dex',line,true)}
+        if(t.after)t.after();showOpts()};opts.appendChild(b)});
+    }
+    showOpts();
+  }
+  buddies();
+}
+/* ms-dos */
+function lookup(arg,cwd){
+  let p=String(arg||'').replace(/\//g,'\\');if(/^c:/i.test(p))p=p.slice(2);
+  let parts=p.startsWith('\\')?[]:cwd.slice();p=p.replace(/^\\/,'');
+  let n=FS;parts=parts.slice();const out=[];
+  for(const s of parts){const k=dosKey(n,s);if(!k)return null;n=n.d[k];out.push(k)}
+  for(const s of p.split('\\').filter(Boolean)){
+    if(s==='.')continue;if(s==='..'){if(out.length){out.pop();n=out.reduce((x,k)=>x.d[k],FS)}continue}
+    if(!n.d)return null;const k=dosKey(n,s);if(!k)return null;n=n.d[k];out.push(k)}
+  return {parts:out,node:n};
+}
+function dosApp(){
+  const w=openWin('dos',{title:'MS-DOS Prompt',icon:'dos',w:560,h:380});
+  if(w.body.innerHTML)return;
+  w.body.innerHTML=`<div class="dos"><div class="out"></div><form autocomplete="off"><span class="pr"></span><input type="text" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Command"></form></div>`;
+  const box=$('.dos',w.body),out=$('.out',w.body),inp=$('input',w.body),pr=$('.pr',w.body);let cwd=['WREN'],hist=[],hi=0,waitEnd=false;
+  const prompt=()=>'C:\\'+cwd.join('\\')+'>';
+  const print=t=>{out.appendChild(document.createTextNode(t+'\n'));box.scrollTop=box.scrollHeight};
+  const setp=()=>{pr.textContent=prompt()};
+  print('Meridian 98 [Version 4.10.2222]\n(C) Copyright Meridian Systems 1991-1999.\n\nType HELP for a list of commands.\n');setp();
+  box.addEventListener('click',()=>{if(!getSelection().toString())inp.focus()});
+  async function typeOut(text){for(const line of text.split('\n')){print(line);await sleep(55)}}
+  $('form',w.body).addEventListener('submit',async e=>{
+    e.preventDefault();const raw=inp.value;inp.value='';print(prompt()+raw);
+    if(waitEnd){waitEnd=false;closeWin('dos');ending();return}
+    const line=raw.trim();if(!line){return}
+    hist.push(line);hi=hist.length;const [cmd,...rest]=line.split(/\s+/);const c=cmd.toLowerCase();const arg=rest.join(' ');
+    if(c==='help'||c==='?')print('Commands:\n  DIR [path]        list files\n  CD <dir>          change directory (CD .. goes up)\n  TYPE <file>       show a file\n  DECRYPT <file> <key>   unlock an encrypted file\n  CLS  VER  DATE  TIME  ECHO  EXIT');
+    else if(c==='cls'){out.textContent=''}
+    else if(c==='ver')print('Meridian 98 [Version 4.10.2222]');
+    else if(c==='date')print('Current date is Fri 12-31-1999');
+    else if(c==='time')print('Current time is 11:'+String(41+Math.floor((Date.now()%1200000)/60000)%18).padStart(2,'0')+'p');
+    else if(c==='echo')print(arg||'ECHO is on.');
+    else if(c==='exit')closeWin('dos');
+    else if(c==='win')print('Meridian 98 is already running.');
+    else if(c==='format')print('Nice try.');
+    else if(c==='dir'||c==='ls'){const r=lookup(arg,cwd);if(!r||!r.node.d)print('File not found - '+(arg||''));else{
+      const n=r.node;let files=0,dirs=0;let s=' Volume in drive C is MERIDIAN98\n Directory of C:\\'+r.parts.join('\\')+'\n\n';
+      if(r.parts.length)s+='.              <DIR>\n..             <DIR>\n';
+      Object.keys(n.d).forEach(k=>{const c2=n.d[k];if(c2.d){dirs++;s+=k.padEnd(15)+'<DIR>\n'}else{files++;s+=k.padEnd(15)+String((c2.t||'').length).padStart(6)+'  12-29-99\n'}});
+      s+='  '+files+' file(s)  '+dirs+' dir(s)';print(s)}}
+    else if(c==='cd'||c==='chdir'){if(!arg)print('C:\\'+cwd.join('\\'));else{const r=lookup(arg,cwd);if(!r||!r.node.d)print('Invalid directory');else{cwd=r.parts;setp()}}}
+    else if(c==='type'||c==='cat'){const r=lookup(arg,cwd);if(!arg)print('Required parameter missing');else if(!r)print('File not found - '+arg);else if(r.node.d)print('Access denied - '+arg);
+      else print(r.node.enc&&!S.flags.solved?'MERIDIAN CRYPT 1.0 - KEY REQUIRED\n\n'+scramble(r.node.t):r.node.t)}
+    else if(c==='decrypt'){const [f,k]=rest;if(!f||!k)print('Usage: DECRYPT <file> <key>');else{const r=lookup(f,cwd);
+      if(!r)print('File not found - '+f);else if(!r.node.enc)print(f+' is not encrypted.');
+      else if(k.toLowerCase()!=='marigold'){sfx.err();print('Decryption failed: bad key (checksum 0x'+(k.length*4099%65535).toString(16).toUpperCase().padStart(4,'0')+').')}
+      else{flag('solved');sfx.win();print('Key accepted. Decrypting...');await sleep(700);await typeOut(r.node.t);print('\n-- Press ENTER to continue --');waitEnd=true}}}
+    else print('Bad command or file name');
+  });
+  inp.addEventListener('keydown',e=>{if(e.key==='ArrowUp'&&hist.length){hi=Math.max(0,hi-1);inp.value=hist[hi]||'';e.preventDefault()}if(e.key==='ArrowDown'){hi=Math.min(hist.length,hi+1);inp.value=hist[hi]||'';e.preventDefault()}});
+  setTimeout(()=>{if(!small()&&!coarse())inp.focus()},50);
+}
+/* notes */
+const OBJ=[
+ {id:'login',t:"Get into Wren's account",done:()=>S.user==='wren',guest:true,hints:["Wren's account needs a password. The login screen shows a hint.","Sign in as Guest. The family photos are on the desktop. One of them has a caption.","The hint is: where Dad said never to go, plus the year it went dark. Type it as one word and a year."]},
+ {id:'mail',t:"Read Wren's mail",done:()=>S.flags.readDex,hints:["Open Mail on the desktop.","Dex wrote about a PIN and a tide chart.","Open the message from Dex and read it all the way through."]},
+ {id:'pin',t:"Find the PIN for the Harbor site's admin page",done:()=>S.flags.adminOpened,hints:["Open Navigator and visit Wren's homepage, Starlight Harbor.","Dex says the PIN is Tuesday's tides. The Tide Chart page lists them.","Tuesday, high / low / high: 9, 2, 6. Enter 926 at starlight.harbor/admin (the small 'webmaster' link on her homepage)."]},
+ {id:'lamp',t:'Find out what the lamp is called',done:()=>S.flags.dexLamp,hints:["Wren's private journal says who knows the name.","Open PalPager, tap Dex, and ask him about the lamp.","Dex says the lamp is called Marigold."]},
+ {id:'decrypt',t:"Unlock Wren's message in C:\\WREN",done:()=>S.flags.solved,hints:["The message is LAST.MSG in the WREN folder. It is encrypted.","Open the MS-DOS Prompt. It starts in the WREN folder. Try HELP.","Type: decrypt LAST.MSG marigold"]}
+];
+function notesApp(){
+  const w=openWin('notes',{title:"Sam's Notes",icon:'notes',w:400,h:430});
+  renderNotes(w);
+}
+function renderNotes(w){
+  const list=OBJ.filter(o=>S.user==='wren'?true:o.guest);const cur=list.find(o=>!o.done());
+  w.body.innerHTML=`<div class="notes"><h3>What I know</h3><div>Wren has been missing since Wednesday night. Her computer is on.</div>
+    <ul>${list.map(o=>`<li class="${o.done()?'done':''}">${esc(o.t)}</li>`).join('')}</ul>
+    ${cur?`<div class="hintbox">${(S.hints[cur.id]||0)?cur.hints.slice(0,S.hints[cur.id]).map((h,i)=>`<div><b>Hint ${i+1}:</b> ${esc(h)}</div>`).join(''):'<i>Stuck? A hint won\'t spoil anything until the last one.</i>'}</div>
+    ${(S.hints[cur.id]||0)<cur.hints.length?'<button class="btn" id="hint">Need a hint</button>':''}`:'<div class="hintbox"><b>Everything is solved.</b> Read the message, then log off.</div>'}</div>`;
+  const h=$('#hint',w.body);if(h)h.onclick=()=>{sfx.click();S.hints[cur.id]=(S.hints[cur.id]||0)+1;save();renderNotes(w)};
+}
+function refreshNotes(){const w=wins.get('notes');if(w)renderNotes(w)}
+/* photos */
+const SCENES=[
+ {n:'MARROW.JPG',cap:`Marrow Point Light. Dark since 1987.<br><i>On the back, in Mom's handwriting: "Dad says never go out there."</i>`,svg:`<svg viewBox="0 0 320 220" width="320" height="220"><defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9c8e8"/><stop offset="1" stop-color="#f2e3c8"/></linearGradient></defs><rect width="320" height="220" fill="url(#sk)"/><rect y="150" width="320" height="70" fill="#3a6e8a"/><path d="M0 160c40-6 60 6 100 0s60 6 100 0 80 6 120 0v60H0z" fill="#2f5f7a"/><path d="M90 175l22-28h96l22 28z" fill="#5a5148"/><path d="M142 147l8-90h20l8 90z" fill="#f4efe6"/><path d="M147 120h26l-1.5 15h-23zM150 85h20l-1 14h-18z" fill="#b8322a"/><rect x="146" y="46" width="28" height="12" fill="#2a2a2a"/><path d="M143 46l17-14 17 14z" fill="#b8322a"/><circle cx="160" cy="52" r="3" fill="#555"/></svg>`},
+ {n:'THEGULL.JPG',cap:`The Gull, summer '98. Wren at the tiller. Sam in a life jacket that was far too big.`,svg:`<svg viewBox="0 0 320 220" width="320" height="220"><rect width="320" height="220" fill="#bfe0f5"/><circle cx="260" cy="42" r="20" fill="#ffe27a"/><rect y="130" width="320" height="90" fill="#2e7fa8"/><path d="M60 140h200l-24 28H86z" fill="#fff" stroke="#234" stroke-width="3"/><path d="M80 140h160" stroke="#c33" stroke-width="5"/><path d="M160 138V50l50 80z" fill="#fff" stroke="#234" stroke-width="3"/><circle cx="128" cy="124" r="9" fill="#e8b48a"/><rect x="120" y="132" width="16" height="12" fill="#e0902a"/><circle cx="104" cy="128" r="6" fill="#e8b48a"/><rect x="98" y="134" width="12" height="8" fill="#e0902a"/></svg>`},
+ {n:'HARBORFEST.JPG',cap:`Dex and Wren, Harbor Fest '99. Both of them are pretending not to laugh.`,svg:`<svg viewBox="0 0 320 220" width="320" height="220"><rect width="320" height="220" fill="#2b2a55"/><path d="M0 40h320" stroke="#ffd23c" stroke-width="2"/><g fill="#ff6a8a"><circle cx="30" cy="46" r="7"/><circle cx="90" cy="48" r="7"/></g><g fill="#6aff9a"><circle cx="60" cy="49" r="7"/><circle cx="120" cy="50" r="7"/></g><g fill="#7ad0ff"><circle cx="200" cy="50" r="7"/><circle cx="260" cy="48" r="7"/></g><circle cx="120" cy="120" r="30" fill="#e8b48a"/><path d="M90 108c10-24 50-24 60 0-14-8-46-8-60 0z" fill="#3a2a22"/><rect x="95" y="150" width="50" height="60" fill="#c0392b"/><circle cx="210" cy="124" r="28" fill="#d7a37e"/><path d="M182 114c6-22 50-22 56 0-14-6-42-6-56 0z" fill="#1d1d1d"/><rect x="186" y="152" width="48" height="58" fill="#2e7d5b"/><path d="M110 128h20M200 130h20" stroke="#333" stroke-width="3" stroke-linecap="round"/><path d="M112 138q8 5 16 0M202 140q8 5 16 0" stroke="#333" stroke-width="2.5" fill="none"/></svg>`}
+];
+function photosApp(){
+  const w=openWin('photos',{title:'Family Photos',icon:'photo',w:420,h:440});
+  if(w.body.innerHTML)return;let i=0;
+  function render(){const s=SCENES[i];w.body.innerHTML=`<div class="photo"><div class="view">${s.svg}</div><div class="cap sel"><b>${s.n}</b> (${i+1} of ${SCENES.length})<br>${s.cap}</div>
+    <div class="tool raise"><button class="btn" id="pp">&#9664; Prev</button><button class="btn" id="pn">Next &#9654;</button></div></div>`;
+    $('#pp',w.body).onclick=()=>{sfx.click();i=(i+SCENES.length-1)%SCENES.length;render()};$('#pn',w.body).onclick=()=>{sfx.click();i=(i+1)%SCENES.length;render()}}
+  render();
+}
+const APPS={
+  readme:{name:'Read Me',icon:'doc',run:()=>notepad('readme','READ ME','FROM: MOM\n\nSam,\n\nI could not get into Wren\'s account. The login screen has a password hint that means nothing to me.\n\nI know you will not leave this alone. Start with the family photos on this desktop. Someone captioned them.\n\nI am downstairs. Don\'t stay up too late. It is New Year\'s Eve.\n\n- Mom')},
+  photos:{name:'Family Photos',icon:'photo',run:photosApp},
+  notes:{name:"Sam's Notes",icon:'notes',run:notesApp},
+  computer:{name:'My Computer',icon:'computer',run:()=>explorer('computer','My Computer',FS,'C:\\')},
+  mail:{name:'Mail',icon:'mail',run:mailApp},
+  nav:{name:'Navigator',icon:'globe',run:navApp},
+  pager:{name:'PalPager',icon:'chat',run:pagerApp},
+  dos:{name:'MS-DOS Prompt',icon:'dos',run:dosApp},
+  bin:{name:'Recycle Bin',icon:'bin',run:()=>explorer('bin','Recycle Bin',BIN,'Recycle Bin\\')}
+};
+const DESK={guest:['readme','photos','notes'],wren:['computer','mail','nav','pager','dos','bin','notes']};
+function openApp(k){sfx.click();APPS[k].run()}
+
+/* ---------- desktop ---------- */
+function buildDesktop(){
+  const ic=$('#icons');ic.innerHTML='';
+  DESK[S.user].forEach(k=>{const a=APPS[k],b=document.createElement('button');b.className='ico';b.innerHTML=`${ICON[a.icon]}<span>${esc(a.name)}</span>`;
+    b.onclick=()=>{$$('.ico',ic).forEach(x=>x.classList.remove('on'));b.classList.add('on');$('#start').hidden=true;if(small()||coarse())openApp(k)};
+    b.ondblclick=()=>openApp(k);ic.appendChild(b)});
+  $('#startbtn').innerHTML=`${ICON.flag}<span>Start</span>`;
+  const st=$('#start');
+  st.innerHTML=`<div class="side raise" style="background:linear-gradient(0deg,#000080,#1084d0)">Meridian <b>98</b></div><div class="items">${
+    DESK[S.user].map(k=>`<button class="mi" data-app="${k}">${ICON[APPS[k].icon]}${esc(APPS[k].name)}</button>`).join('')}<div class="mi line"></div>
+    <button class="mi" data-act="logoff">${ICON.key}Log Off...</button><button class="mi" data-act="reset">${ICON.reset}Restart Game...</button><button class="mi" data-act="off">${ICON.power}Shut Down...</button></div>`;
+  $$('.mi[data-app]',st).forEach(b=>b.onclick=()=>{st.hidden=true;openApp(b.dataset.app)});
+  $$('.mi[data-act]',st).forEach(b=>b.onclick=()=>{st.hidden=true;sfx.click();act(b.dataset.act)});
+}
+function act(a){
+  if(a==='logoff')dlg({icon:'q',title:'Log Off',text:'Are you sure you want to log off? Your progress is saved.',buttons:[{label:'Yes',fn:()=>{closeAll();S.user=null;save();showLogin()}},{label:'No'}]});
+  if(a==='off')dlg({icon:'q',title:'Shut Down Meridian 98',text:'Are you sure you want to shut down your computer?',buttons:[{label:'Yes',fn:()=>{if(S.flags.solved)ending();else{closeAll();showPower(true)}}},{label:'No'}]});
+  if(a==='reset')dlg({icon:'w',title:'Restart Game',text:'This erases your progress and starts over from the beginning. Continue?',buttons:[{label:'Erase and restart',fn:()=>{try{localStorage.removeItem(KEY)}catch(e){}location.reload()}},{label:'Cancel'}]});
+}
+$('#startbtn').onclick=e=>{e.stopPropagation();sfx.click();const s=$('#start');s.hidden=!s.hidden};
+$('#os').addEventListener('pointerdown',e=>{if(!e.target.closest('#start,#startbtn'))$('#start').hidden=true;if(!e.target.closest('.ico')&&!e.target.closest('.win'))$$('.ico').forEach(x=>x.classList.remove('on'))});
+function snd(){$('#snd').innerHTML=muted?ICON.spkoff:ICON.spk}
+$('#snd').onclick=()=>{muted=!muted;snd();if(!muted)sfx.click()};snd();
+let balT=0;
+function balloon(t,s,fn){const b=$('#balloon');b.hidden=false;b.innerHTML=`<b>${esc(t)}</b>${esc(s)}`;b.onclick=()=>{b.hidden=true;if(fn)fn()};clearTimeout(balT);balT=setTimeout(()=>{b.hidden=true},9000)}
+
+/* clock: starts at 11:41 PM on 31 Dec 1999 */
+const T0=new Date(1999,11,31,23,41,0).getTime(),R0=Date.now();
+setInterval(()=>{const t=new Date(T0+(Date.now()-R0));
+  $('#clock').textContent=t.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+  if(t.getFullYear()>=2000&&!S.flags.y2k&&S.user){S.flags.y2k=true;save();dlg({icon:'i',title:'Year 2000 Compliance Check',text:'Meridian 98 is Year 2000 ready. All systems normal. Happy New Year!'})}},1000);
+
+/* ---------- boot flow ---------- */
+function show(id){['power','bios','splash','login','os','ending'].forEach(x=>{$('#'+x).hidden=x!==id})}
+function showPower(){show('power')}
+async function boot(){
+  skip=false;booting=true;ac();show('bios');
+  const L=['Meridian BIOS v4.51PG   (C) 1991-1999 Meridian Systems Inc.','','CPU: Pentium II 350MHz','Memory Test: 65536K OK','','Detecting IDE Primary Master ... WDC AC28400','Detecting IDE Primary Slave  ... None','Press DEL to enter SETUP','','Verifying DMI Pool Data ........','Boot from C: ...','Starting Meridian 98...'];
+  const bi=$('#bios');bi.textContent='';
+  for(const l of L){bi.textContent+=l+'\n';await sleep(l===''?60:170)}
+  await sleep(350);show('splash');sfx.boot();await sleep(2300);
+  booting=false;skip=false;
+  if(S.user){enter()}else showLogin();
+}
+function showLogin(){
+  show('login');
+  $('#login').innerHTML=`<div class="dlg raise" id="lg"><div class="tbar"><span class="tt">Welcome to Meridian 98</span></div>
+    <div class="dbody" style="padding-bottom:4px"><div style="flex:none">${ICON.computer.replace('<svg','<svg width="40" height="40"')}</div><div class="dtext">Type a user name and password to log on to Meridian 98.</div></div>
+    <form id="lf" autocomplete="off"><div class="field"><label for="un">User name:</label><input id="un" value="Wren" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <label for="pw">Password:</label><input id="pw" type="password" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+    <div class="hint sel">Password hint: <i>where Dad said never to go, plus the year it went dark</i></div><div class="err" id="le"></div>
+    <div class="dbtns"><button class="btn" id="ok" type="submit">OK</button><button class="btn" id="gst" type="button">Log on as Guest</button></div></form></div>`;
+  const form=$('#lf');
+  form.onsubmit=e=>{e.preventDefault();const u=$('#un').value.trim().toLowerCase(),p=$('#pw').value.toLowerCase().replace(/[\s_\-]/g,'');
+    if(u==='guest'){enter('guest');return}
+    if(u==='wren'&&(p==='marrow1987'||p==='marrowpoint1987')){enter('wren');return}
+    sfx.err();$('#le').textContent=u==='wren'?'The password you typed is incorrect. Check the hint.':'Unknown user name. Try the hint, or log on as Guest.';
+    const d=$('#lg');d.classList.remove('shake');void d.offsetWidth;d.classList.add('shake');$('#pw').value='';$('#pw').focus()};
+  $('#gst').onclick=()=>{sfx.click();enter('guest')};
+  setTimeout(()=>{if(!small()&&!coarse())$('#pw').focus()},50);
+}
+function enter(user){
+  if(user)S.user=user;save();show('os');buildDesktop();closeAll();sfx.win();refreshNotes();
+  if(S.user==='guest'){setTimeout(()=>APPS.readme.run(),250)}
+  else{
+    setTimeout(()=>{const un=MAILS.filter(m=>!S.mail[m.id]).length;if(un)balloon('New mail','You have '+un+' unread message(s).',()=>openApp('mail'));
+      if(!S.flags.welcomed){S.flags.welcomed=true;save();APPS.notes.run()}},500)}
+}
+function ending(){
+  closeAll();show('ending');const un=MAILS.filter(m=>S.mail[m.id]).length;
+  $('#ending').innerHTML=`<div class="in"><h2>12:00 AM &middot; JANUARY 1, 2000</h2><div class="beam" style="animation-delay:1.2s"></div>
+    <div style="animation-delay:2.6s">Across the water, a light that has been dark for twelve years comes on.</div>
+    <div style="animation-delay:4.6s">On the porch, a man who has been watching that rock since Wednesday does not say anything. He just puts his hand on your shoulder.</div>
+    <div style="animation-delay:7s">Meridian 98 is shutting down.<br>It is now safe to turn off your computer.</div>
+    <div style="animation-delay:9s;color:#889;font-size:12px">THE END &middot; mail read ${un}/${MAILS.length} &middot; hints used ${Object.values(S.hints).reduce((a,b)=>a+b,0)}</div>
+    <button class="btn" id="again" style="animation-delay:10s">Play again</button></div>`;
+  sfx.boot();$('#again').onclick=()=>{try{localStorage.removeItem(KEY)}catch(e){}location.reload()};
+}
+$('#pwr').onclick=()=>{ac();sfx.click();boot()};
+$('#app').addEventListener('pointerdown',()=>{if(booting)skip=true},{capture:true});
+window.__m98={S:()=>S,wins};
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+}
+</script>
+</body>
+</html>
